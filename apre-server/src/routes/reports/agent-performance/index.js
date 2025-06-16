@@ -93,4 +93,35 @@ router.get('/call-duration-by-date-range', (req, res, next) => {
   }
 });
 
+// Get all unique agents
+router.get('/agents', (req, res, next) => {
+  try {
+    mongo(async db => {
+      const agents = await db.collection('agentPerformance').distinct('agentId');
+      res.send(agents);
+    }, next);
+  } catch (err) {
+    console.error('Error getting agents:', err);
+    next(err);
+  }
+});
+
+// Get performance data by agentId
+router.get('/performance-by-agent', (req, res, next) => {
+  const agentId = parseInt(req.query.agentId);
+  if (!agentId) {
+    return next(createError(400, 'agentId parameter is required'));
+  }
+
+  try {
+    mongo(async db => {
+      const data = await db.collection('agentPerformance').find({ agentId }).toArray();
+      res.send(data);
+    }, next);
+  } catch (err) {
+    console.error('Error getting performance data for agent:', err);
+    next(err);
+  }
+});
+
 module.exports = router;
