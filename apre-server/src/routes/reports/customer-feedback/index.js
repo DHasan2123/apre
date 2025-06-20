@@ -92,4 +92,49 @@ router.get('/channel-rating-by-month', (req, res, next) => {
   }
 });
 
+
+router.get('/feedback-by-month', (req, res, next) => {
+  try {
+    const month = req.query.month;
+
+    if (!month) {
+      return res.status(400).send('Month parameter is missing');
+    }
+
+    mongo(async db => {
+      const feedbackByMonth = await db.collection('customerFeedback').aggregate([
+        {
+          $match: {
+            $expr: {
+              $eq: [{ $month: '$feedbackDate' }, parseInt(month)]
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            id: '$_id',
+            month: { $dateToString: { format: '%B', date: '$feedbackDate' } },
+            region: 1,
+            category: 1,
+            channel: 1,
+            customer: 1,
+            salesperson: 1,
+            feedbackType: 1,
+            feedbackText: 1,
+            feedbackSource: 1,
+            feedbackStatus: 1
+          }
+        }
+      ]).toArray();
+
+      res.send(feedbackByMonth);
+    }, next);
+
+  } catch (err) {
+    console.error('Error getting feedback data by month: ', err);
+    next(err);
+  }
+});
+
 module.exports = router;
